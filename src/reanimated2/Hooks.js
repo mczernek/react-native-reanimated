@@ -1,12 +1,18 @@
 import { useEffect, useRef } from 'react';
 
 import WorkletEventHandler from './WorkletEventHandler';
-import { startMapper, stopMapper, makeMutable, makeRemote } from './core';
+import {
+  startMapper,
+  stopMapper,
+  makeMutable,
+  makeRemote,
+  requestFrame,
+} from './core';
 import updateProps from './UpdateProps';
 import { initialUpdaterRun } from './animations';
 import { getTag } from './NativeMethods'
-import { reanimatedNativeAvailable } from './NativeReanimated';
 import JSReanimated from './JSReanimated';
+import NativeReanimated from './NativeReanimated';
 
 export function useSharedValue(init) {
   const ref = useRef(null);
@@ -35,9 +41,10 @@ export function useMapper(fun, inputs = [], outputs = [], dependencies = []) {
 export function useEvent(handler, eventNames = []) {
   const initRef = useRef(null);
   if (initRef.current === null) {
-    initRef.current = reanimatedNativeAvailable
+    initRef.current = NativeReanimated.native
       ? new WorkletEventHandler(handler, eventNames)
-      : JSReanimated.createJsEventHandler(handler);
+      : // this comes from JS implementation
+        NativeReanimated.createJsEventHandler(handler);
   }
 
   return initRef.current;
@@ -233,7 +240,7 @@ function styleUpdater(viewTag, updater, state, maybeViewRef) {
     }
 
     if (!allFinished) {
-      requestAnimationFrame_Reanimated(frame);
+      requestFrame(frame);
     } else {
       state.isAnimationRunning = false;
     }
@@ -244,7 +251,7 @@ function styleUpdater(viewTag, updater, state, maybeViewRef) {
     if (!state.isAnimationRunning) {
       state.isAnimationCancelled = false;
       state.isAnimationRunning = true;
-      requestAnimationFrame_Reanimated(frame);
+      requestFrame(frame);
     }
   } else {
     state.isAnimationCancelled = true;
