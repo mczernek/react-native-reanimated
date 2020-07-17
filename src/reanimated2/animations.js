@@ -1,5 +1,6 @@
 /* global _WORKLET */
 import { Easing } from './Easing';
+import NativeReanimated from './NativeReanimated';
 
 let IN_STYLE_UPDATER = false;
 
@@ -26,7 +27,7 @@ function defineAnimation(starting, factory) {
   if (IN_STYLE_UPDATER) {
     return starting;
   }
-  if (_WORKLET) {
+  if (_WORKLET || !NativeReanimated.native) {
     return factory();
   }
   return factory;
