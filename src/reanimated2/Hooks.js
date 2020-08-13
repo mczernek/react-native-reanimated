@@ -10,8 +10,7 @@ import {
 } from './core';
 import updateProps from './UpdateProps';
 import { initialUpdaterRun } from './animations';
-import { getTag } from './NativeMethods'
-import JSReanimated from './JSReanimated';
+import { getTag } from './NativeMethods';
 import NativeReanimated from './NativeReanimated';
 
 export function useSharedValue(init) {
@@ -268,6 +267,7 @@ export function useAnimatedStyle(updater, dependencies) {
   const viewTag = useSharedValue(-1);
   const initRef = useRef(null);
   const inputs = Object.values(updater._closure);
+  const viewRef = useRef(null);
 
   // build dependencies
   if (dependencies === undefined) {
@@ -285,11 +285,12 @@ export function useAnimatedStyle(updater, dependencies) {
   }
 
   const { remoteState, initial } = initRef.current;
+  const maybeViewRef = NativeReanimated.native ? undefined : viewRef;
 
   useEffect(() => {
     const fun = () => {
       'worklet';
-      styleUpdater(viewTag, updater, remoteState);
+      styleUpdater(viewTag, updater, remoteState, maybeViewRef);
     };
     const mapperId = startMapper(fun, inputs, []);
     return () => {
@@ -382,15 +383,24 @@ export function useAnimatedGestureHandler(handlers) {
       if (event.oldState === ACTIVE && event.state === END && handlers.onEnd) {
         handlers.onEnd(event, context);
       }
-      if (event.oldState === BEGAN && event.state === FAILED && handlers.onFail) {
+      if (
+        event.oldState === BEGAN &&
+        event.state === FAILED &&
+        handlers.onFail
+      ) {
         handlers.onFail(event, context);
       }
-      if (event.oldState === ACTIVE && event.state === CANCELLED && handlers.onCancel) {
+      if (
+        event.oldState === ACTIVE &&
+        event.state === CANCELLED &&
+        handlers.onCancel
+      ) {
         handlers.onCancel(event, context);
       }
       if (
         (event.oldState === BEGAN || event.oldState === ACTIVE) &&
-        event.state !== BEGAN && event.state !== ACTIVE &&
+        event.state !== BEGAN &&
+        event.state !== ACTIVE &&
         handlers.onFinish
       ) {
         handlers.onFinish(
@@ -461,8 +471,8 @@ export function useAnimatedScrollHandler(handlers) {
 }
 
 export function useAnimatedRef() {
-  const tag = useSharedValue(-1)
-  const ref = useRef(null)
+  const tag = useSharedValue(-1);
+  const ref = useRef(null);
 
   if (!ref.current) {
     const fun = function(component) {
@@ -470,7 +480,7 @@ export function useAnimatedRef() {
       // enters when ref is set by attaching to a component
       if (component) {
         tag.value = getTag(component);
-        fun.current = component
+        fun.current = component;
       }
       return tag.value;
     };
@@ -483,6 +493,5 @@ export function useAnimatedRef() {
     ref.current = fun;
   }
 
-  return ref.current
+  return ref.current;
 }
-
